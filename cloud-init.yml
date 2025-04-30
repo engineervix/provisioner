@@ -1,0 +1,112 @@
+#cloud-config
+hostname: ${server_name}
+
+# Create users
+users:
+  - name: ${username}
+    groups: sudo,docker
+    shell: /bin/zsh
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+# Update package lists
+package_update: true
+package_upgrade: true
+
+# Install essential packages
+packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+  - software-properties-common
+  - ufw
+  - unattended-upgrades
+  - build-essential
+  - python3-full
+  - python3-pip
+  - vim-nox
+  - zsh
+  - jq
+  - htop
+  - rclone
+  - plocate
+  - ncdu
+  - net-tools
+
+# Configure firewall (as backup to Hetzner firewall)
+runcmd:
+  # UFW setup
+  - ufw allow 22/tcp comment 'SSH access'
+  - ufw allow 80/tcp comment 'HTTP access'
+  - ufw allow 443/tcp comment 'HTTPS access'
+  - ufw --force enable
+
+  # Install fail2ban for SSH protection (since we can't rely on IP restrictions)
+  - apt-get install -y fail2ban
+  - systemctl enable fail2ban
+  - systemctl start fail2ban
+
+  # Verify Docker is running properly
+  - systemctl status docker
+  - docker --version
+  - docker compose version
+
+  # SSH hardening
+  - cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
+  - sed -i 's/^#\?PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
+  - sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
+  - sed -i 's/^#\?ChallengeResponseAuthentication .*/ChallengeResponseAuthentication no/' /etc/ssh/sshd_config
+  - sed -i 's/^#\?PubkeyAuthentication .*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+  - echo "AllowUsers ${username}" >> /etc/ssh/sshd_config
+  - systemctl restart ssh
+
+  # Set timezone
+  - timedatectl set-timezone Africa/Lusaka
+
+  # Create and configure swap file (if none exists)
+  - |
+    if [ $(swapon --show | wc -l) -eq 0 ]; then
+      # Calculate swap size (2x RAM, max 4GB)
+      mem_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+      mem_gb=$((mem_kb / 1024 / 1024))
+      swap_size=$((mem_gb * 2))
+      if [ $swap_size -gt 4 ]; then swap_size=4; fi
+      
+      # Create and configure swap
+      fallocate -l "$${swap_size}G" /swapfile
+      chmod 600 /swapfile
+      mkswap /swapfile
+      swapon /swapfile
+      
+      # Add to fstab
+      cp /etc/fstab /etc/fstab.bak
+      echo '/swapfile none swap sw 0 0' | tee -a /etc/fstab
+      
+      # Configure swap settings
+      sysctl vm.swappiness=10
+      sysctl vm.vfs_cache_pressure=50
+      echo "vm.swappiness=10" | tee -a /etc/sysctl.conf
+      echo "vm.vfs_cache_pressure=50" | tee -a /etc/sysctl.conf
+    fi
+
+  # Secure shared memory
+  - cp /etc/fstab /etc/fstab.bak2
+  - echo "none /run/shm tmpfs defaults,ro 0 0" | tee -a /etc/fstab
+  - mount -o remount /run/shm
+
+  # oh-my-zsh
+  - runuser -l ${username} -c 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended'
+
+write_files:
+  # Configure unattended upgrades
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+      APT::Periodic::AutocleanInterval "7";
+
+# Final message on console
+final_message: "The system is finally up, after $UPTIME seconds"

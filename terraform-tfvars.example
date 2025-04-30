@@ -1,0 +1,23 @@
+# Your Hetzner Cloud API token
+hcloud_token = "your_hetzner_api_token"
+
+# Path to your SSH public key
+ssh_public_key_path  = "~/.ssh/id_rsa.pub"
+
+# Server configuration
+server_name     = "ubuntu-prod-server"
+server_location = "nbg1"  # Nuremberg, Germany
+
+# Protection settings
+enable_delete_protection  = true   # Hetzner Cloud API protection (can be disabled via API/Console)
+enable_rebuild_protection = true   # Prevent rebuilding via Hetzner Cloud API
+
+# User configuration
+user_name = "ubuntu"
+
+# Security configuration - By default, not restricting SSH by IP since most users have dynamic IPs
+enable_ssh_ip_restrictions = false
+
+# If you ever get a static IP or want to temporarily restrict access:
+# enable_ssh_ip_restrictions = true
+# allowed_ssh_ips = ["your-static-ip/32"]
