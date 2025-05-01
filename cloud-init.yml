@@ -35,6 +35,7 @@ packages:
   - plocate
   - ncdu
   - net-tools
+  - fonts-powerline
 
 # Configure firewall (as backup to Hetzner firewall)
 runcmd:
@@ -97,8 +98,64 @@ runcmd:
   - echo "none /run/shm tmpfs defaults,ro 0 0" | tee -a /etc/fstab
   - mount -o remount /run/shm
 
-  # oh-my-zsh
+  # Install oh-my-zsh and configure it
   - runuser -l ${username} -c 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended'
+
+  # Install additional Powerline fonts
+  - |
+    cd /tmp
+    wget https://github.com/Lokaltog/powerline/raw/develop/font/PowerlineSymbols.otf
+    wget https://github.com/Lokaltog/powerline/raw/develop/font/10-powerline-symbols.conf
+    wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
+    wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
+    wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
+    wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
+    
+    # Move fonts to the system font directory
+    mv -v PowerlineSymbols.otf /usr/share/fonts/
+    mv -v MesloLGS*.ttf /usr/share/fonts/
+    
+    # Update font cache
+    fc-cache -vf
+    
+    # Move config to proper location
+    mv 10-powerline-symbols.conf /etc/fonts/conf.d/
+  
+  # Install ZSH plugins
+  - |
+    # Install zsh-autosuggestions
+    git clone https://github.com/zsh-users/zsh-autosuggestions /home/${username}/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+    
+    # Install zsh-syntax-highlighting
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git /home/${username}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+    
+    # Set permissions for the plugins
+    chown -R ${username}:${username} /home/${username}/.oh-my-zsh/custom/plugins/
+  
+  # Configure .zshrc
+  - |
+    # Set theme and plugins in .zshrc
+    sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="agnoster"/' /home/${username}/.zshrc
+    sed -i 's/plugins=(git)/plugins=(git docker docker-compose colorize colored-man-pages sudo zsh-autosuggestions zsh-syntax-highlighting)/' /home/${username}/.zshrc
+    
+    # Add some useful aliases and configurations
+    cat >> /home/${username}/.zshrc << 'EOL'
+    
+    # Custom configurations
+    export TERM="xterm-256color"
+    
+    # Set default editor
+    export EDITOR='vim'
+    
+    # Useful aliases
+    alias la='ls -lah'
+    
+    # Disable sharing history between terminals
+    unsetopt share_history
+    EOL
+    
+    # Fix permissions
+    chown ${username}:${username} /home/${username}/.zshrc
 
 write_files:
   # Configure unattended upgrades
