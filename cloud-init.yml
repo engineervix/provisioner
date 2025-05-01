@@ -157,6 +157,51 @@ runcmd:
     # Fix permissions
     chown ${username}:${username} /home/${username}/.zshrc
 
+  # Install vim-airline
+  - |
+    # Create vim plugin directories
+    mkdir -p /home/${username}/.vim/autoload /home/${username}/.vim/bundle
+    
+    # Install vim-plug (plugin manager)
+    curl -fLo /home/${username}/.vim/autoload/plug.vim --create-dirs \
+      https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+    
+    # Create .vimrc with vim-airline configuration
+    cat > /home/${username}/.vimrc << 'EOL'
+    call plug#begin('~/.vim/bundle')
+    
+    " Install vim-airline and themes
+    Plug 'vim-airline/vim-airline'
+    Plug 'vim-airline/vim-airline-themes'
+    
+    " Initialize plugin system
+    call plug#end()
+    
+    " Airline configuration
+    let g:airline_powerline_fonts = 1
+    let g:airline_theme = 'minimalist'
+    let g:airline#extensions#tabline#enabled = 1
+    
+    " General vim settings
+    syntax enable
+    set number
+    set background=dark
+    set encoding=utf-8
+    
+    " Key mappings
+    nnoremap <C-J> <C-W><C-J>
+    nnoremap <C-K> <C-W><C-K>
+    nnoremap <C-L> <C-W><C-L>
+    nnoremap <C-H> <C-W><C-H>
+    EOL
+    
+    # Set permissions
+    chown -R ${username}:${username} /home/${username}/.vim
+    chown ${username}:${username} /home/${username}/.vimrc
+    
+    # Install plugins automatically
+    su - ${username} -c 'vim -E -s -u "/home/${username}/.vimrc" +PlugInstall +qall'
+
 write_files:
   # Configure unattended upgrades
   - path: /etc/apt/apt.conf.d/20auto-upgrades
