@@ -4,7 +4,7 @@ This repository contains Terraform configurations to automate the provisioning o
 
 ## Prerequisites
 
-- [Terraform](https://www.terraform.io/downloads.html) (v1.0.0 or newer)
+- [Terraform](https://www.terraform.io/downloads.html) (v1.11.0 or newer)
 - A Hetzner Cloud account
 - A Hetzner Cloud API token (with read/write permissions)
 - SSH key pair
@@ -29,7 +29,7 @@ This repository contains Terraform configurations to automate the provisioning o
 
    Make sure to:
    - Add your Hetzner Cloud API token
-   - Specify the correct paths to your SSH keys
+   - Specify the correct path to your Public SSH key
    - Set your preferred server name and location
 
    **Security Note**: By default, SSH access is not restricted by IP address since the assumption is that most users have dynamic IPs. The configuration relies on:
@@ -79,12 +79,15 @@ This repository contains Terraform configurations to automate the provisioning o
    After the provisioning is complete, Terraform will output the IP address of your new server:
 
    ```bash
-   ssh -i ~/.ssh/id_rsa ubuntu@<server_ip>
+   ssh -i ~/.ssh/id_rsa username@<server_ip>
    ```
+
+> [!NOTE]  
+> You might be prompted to reboot after initial login.
 
 ## Docker CE Pre-installed
 
-This configuration uses Hetzner's Docker CE app image which comes with:
+This configuration uses Hetzner's [Docker CE](https://docs.hetzner.com/cloud/apps/list/docker-ce/) app image which comes with:
 - Ubuntu 24.04 as the base OS
 - Docker pre-installed and configured
 - Docker Compose plugin pre-installed
@@ -120,7 +123,7 @@ After provisioning, you may want to:
 
 1. Run your Ansible playbooks for further configuration
 2. Deploy Docker containers for your applications
-3. Configure Traefik or Nginx Proxy Manager for reverse proxy
+3. Configure a reverse proxy such as Traefik, Caddy, NGiИX, etc.
 
 ## Verifying Cloud-Init Installation
 
@@ -151,7 +154,7 @@ To verify that everything was installed properly by cloud-init:
    sudo cloud-init query -a
    ```
 
-If you encounter issues with Oh My Zsh, Powerlevel10k, or any other configuration, these logs will help identify what went wrong.
+If you encounter issues with oh-my-zsh, vim, or any other configuration, these logs will help identify what went wrong.
 
 ## Destroying Resources
 
@@ -160,6 +163,9 @@ If you need to tear down the infrastructure:
 ```bash
 terraform destroy
 ```
+
+> [!NOTE]  
+> By default, this wont work unless you manually "disable protection" in your Hetzner dashboard. This is [a protective measure I deliberately added](https://registry.terraform.io/providers/hetznercloud/hcloud/latest/docs#delete-protection) to prevent accidental deletion.
 
 Type 'yes' when prompted to destroy the resources.
 
