@@ -2,6 +2,21 @@
 
 This repository contains Terraform configurations to automate the provisioning of a Hetzner Cloud server with Docker CE pre-installed.
 
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Prerequisites](#prerequisites)
+- [Setup](#setup)
+- [Docker CE Pre-installed](#docker-ce-pre-installed)
+- [Server Protection](#server-protection)
+- [Next Steps](#next-steps)
+- [Verifying Cloud-Init Installation](#verifying-cloud-init-installation)
+- [Destroying Resources](#destroying-resources)
+- [Important Notes](#important-notes)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 ## Prerequisites
 
 - [Terraform](https://www.terraform.io/downloads.html) (v1.11.0 or newer)
