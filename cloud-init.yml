@@ -107,6 +107,18 @@ runcmd:
   # Install oh-my-zsh and configure it
   - runuser -l ${username} -c 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended'
 
+  # Install Spaceship theme for oh-my-zsh
+  - |
+    # Clone the Spaceship prompt repository
+    git clone https://github.com/spaceship-prompt/spaceship-prompt.git "/home/${username}/.oh-my-zsh/custom/themes/spaceship-prompt" --depth=1
+    
+    # Create a symlink to the theme file
+    ln -s "/home/${username}/.oh-my-zsh/custom/themes/spaceship-prompt/spaceship.zsh-theme" "/home/${username}/.oh-my-zsh/custom/themes/spaceship.zsh-theme"
+    
+    # Set ownership
+    chown -R ${username}:${username} "/home/${username}/.oh-my-zsh/custom/themes/spaceship-prompt"
+    chown ${username}:${username} "/home/${username}/.oh-my-zsh/custom/themes/spaceship.zsh-theme"
+
   # Install additional Powerline fonts
   - |
     cd /tmp
@@ -141,7 +153,7 @@ runcmd:
   # Configure .zshrc
   - |
     # Set theme and plugins in .zshrc
-    sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="agnoster"/' /home/${username}/.zshrc
+    sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="spaceship"/' /home/${username}/.zshrc
     sed -i 's/plugins=(git)/plugins=(git docker docker-compose colorize colored-man-pages sudo zsh-autosuggestions zsh-syntax-highlighting)/' /home/${username}/.zshrc
     
     # Add some useful aliases and configurations
