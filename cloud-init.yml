@@ -17,25 +17,26 @@ package_upgrade: true
 # Install essential packages
 packages:
   - apt-transport-https
+  - build-essential
   - ca-certificates
   - curl
+  - fonts-powerline
   - gnupg
+  - htop
+  - jq
+  - just
   - lsb-release
+  - ncdu
+  - net-tools
+  - plocate
+  - python3-full
+  - python3-pip
+  - rclone
   - software-properties-common
   - ufw
   - unattended-upgrades
-  - build-essential
-  - python3-full
-  - python3-pip
   - vim-nox
   - zsh
-  - jq
-  - htop
-  - rclone
-  - plocate
-  - ncdu
-  - net-tools
-  - fonts-powerline
 
 # Configure firewall (as backup to Hetzner firewall)
 runcmd:
@@ -79,17 +80,17 @@ runcmd:
       mem_gb=$((mem_kb / 1024 / 1024))
       swap_size=$((mem_gb * 2))
       if [ $swap_size -gt 4 ]; then swap_size=4; fi
-      
+
       # Create and configure swap
       fallocate -l "$${swap_size}G" /swapfile
       chmod 600 /swapfile
       mkswap /swapfile
       swapon /swapfile
-      
+
       # Add to fstab
       cp /etc/fstab /etc/fstab.bak
       echo '/swapfile none swap sw 0 0' | tee -a /etc/fstab
-      
+
       # Configure swap settings
       sysctl vm.swappiness=10
       sysctl vm.vfs_cache_pressure=50
@@ -109,10 +110,10 @@ runcmd:
   - |
     # Clone the Spaceship prompt repository
     git clone https://github.com/spaceship-prompt/spaceship-prompt.git "/home/${username}/.oh-my-zsh/custom/themes/spaceship-prompt" --depth=1
-    
+
     # Create a symlink to the theme file
     ln -s "/home/${username}/.oh-my-zsh/custom/themes/spaceship-prompt/spaceship.zsh-theme" "/home/${username}/.oh-my-zsh/custom/themes/spaceship.zsh-theme"
-    
+
     # Set ownership
     chown -R ${username}:${username} "/home/${username}/.oh-my-zsh/custom/themes/spaceship-prompt"
     chown ${username}:${username} "/home/${username}/.oh-my-zsh/custom/themes/spaceship.zsh-theme"
@@ -126,50 +127,50 @@ runcmd:
     wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
     wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
     wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
-    
+
     # Move fonts to the system font directory
     mv -v PowerlineSymbols.otf /usr/share/fonts/
     mv -v MesloLGS*.ttf /usr/share/fonts/
-    
+
     # Update font cache
     fc-cache -vf
-    
+
     # Move config to proper location
     mv 10-powerline-symbols.conf /etc/fonts/conf.d/
-  
+
   # Install ZSH plugins
   - |
     # Install zsh-autosuggestions
     git clone https://github.com/zsh-users/zsh-autosuggestions /home/${username}/.oh-my-zsh/custom/plugins/zsh-autosuggestions
-    
+
     # Install zsh-syntax-highlighting
     git clone https://github.com/zsh-users/zsh-syntax-highlighting.git /home/${username}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
-    
+
     # Set permissions for the plugins
     chown -R ${username}:${username} /home/${username}/.oh-my-zsh/custom/plugins/
-  
+
   # Configure .zshrc
   - |
     # Set theme and plugins in .zshrc
     sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="spaceship"/' /home/${username}/.zshrc
     sed -i 's/plugins=(git)/plugins=(git docker docker-compose colorize colored-man-pages sudo zsh-autosuggestions zsh-syntax-highlighting)/' /home/${username}/.zshrc
-    
+
     # Add some useful aliases and configurations
     cat >> /home/${username}/.zshrc << 'EOL'
-    
+
     # Custom configurations
     export TERM="xterm-256color"
-    
+
     # Set default editor
     export EDITOR='vim'
-    
+
     # Useful aliases
     alias la='ls -lah'
-    
+
     # Disable sharing history between terminals
     unsetopt share_history
     EOL
-    
+
     # Fix permissions
     chown ${username}:${username} /home/${username}/.zshrc
 
@@ -177,44 +178,44 @@ runcmd:
   - |
     # Create vim plugin directories
     mkdir -p /home/${username}/.vim/autoload /home/${username}/.vim/bundle
-    
+
     # Install vim-plug (plugin manager)
     curl -fLo /home/${username}/.vim/autoload/plug.vim --create-dirs \
       https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-    
+
     # Create .vimrc with vim-airline configuration
     cat > /home/${username}/.vimrc << 'EOL'
     call plug#begin('~/.vim/bundle')
-    
+
     " Install vim-airline and themes
     Plug 'vim-airline/vim-airline'
     Plug 'vim-airline/vim-airline-themes'
-    
+
     " Initialize plugin system
     call plug#end()
-    
+
     " Airline configuration
     let g:airline_powerline_fonts = 1
     let g:airline_theme = 'minimalist'
     let g:airline#extensions#tabline#enabled = 1
-    
+
     " General vim settings
     syntax enable
     set number
     set background=dark
     set encoding=utf-8
-    
+
     " Key mappings
     nnoremap <C-J> <C-W><C-J>
     nnoremap <C-K> <C-W><C-K>
     nnoremap <C-L> <C-W><C-L>
     nnoremap <C-H> <C-W><C-H>
     EOL
-    
+
     # Set permissions
     chown -R ${username}:${username} /home/${username}/.vim
     chown ${username}:${username} /home/${username}/.vimrc
-    
+
     # Install plugins automatically
     su - ${username} -c 'vim -E -s -u "/home/${username}/.vimrc" +PlugInstall +qall'
 
