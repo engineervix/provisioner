@@ -23,7 +23,7 @@ resource "hcloud_ssh_key" "default" {
 resource "hcloud_server" "ubuntu_server" {
   name        = var.server_name
   image       = "docker-ce"
-  server_type = "cax21" # Arm64, 4 vCPU, 8 GB RAM
+  server_type = "cpx22" # x86, 2 vCPU, 4 GB RAM, 80GB SSD
   location    = var.server_location
   ssh_keys    = [hcloud_ssh_key.default.id]
 

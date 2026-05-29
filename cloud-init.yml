@@ -60,14 +60,11 @@ runcmd:
   - systemctl enable fail2ban
   - systemctl start fail2ban
 
-  # Verify Docker is running properly
-  - systemctl status docker
-  - docker --version
-  - docker compose version
-
   # Install ctop (https://github.com/bcicen/ctop)
-  - wget https://github.com/bcicen/ctop/releases/download/v0.7.7/ctop-0.7.7-linux-arm64 -O /usr/local/bin/ctop
-  - chmod +x /usr/local/bin/ctop
+  - |
+    ARCH=$(dpkg --print-architecture)
+    wget "https://github.com/bcicen/ctop/releases/download/v0.7.7/ctop-0.7.7-linux-$${ARCH}" -O /usr/local/bin/ctop
+    chmod +x /usr/local/bin/ctop
 
   # SSH hardening
   - cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
@@ -477,8 +474,6 @@ runcmd:
     Plug 'tpope/vim-surround'
     Plug 'tpope/vim-commentary'
     Plug 'jiangmiao/auto-pairs'
-    Plug 'wakatime/vim-wakatime'
-
     call plug#end()
 
     filetype plugin indent on
