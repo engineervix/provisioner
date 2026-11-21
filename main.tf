@@ -23,7 +23,7 @@ resource "hcloud_ssh_key" "default" {
 resource "hcloud_server" "ubuntu_server" {
   name        = var.server_name
   image       = "docker-ce"
-  server_type = "cpx22" # x86, 2 vCPU, 4 GB RAM, 80GB SSD
+  server_type = "cx23" # x86, 2 vCPU, 4 GB RAM, 40GB SSD
   location    = var.server_location
   ssh_keys    = [hcloud_ssh_key.default.id]
 
@@ -50,11 +50,11 @@ resource "hcloud_server" "ubuntu_server" {
 
   # Wait for the server to be available via SSH
   connection {
-    type        = "ssh"
-    user        = "root"
-    host        = self.ipv4_address
-    agent       = true
-    timeout     = "2m"
+    type    = "ssh"
+    user    = "root"
+    host    = self.ipv4_address
+    agent   = true
+    timeout = "2m"
   }
 
   # Basic provisioner to test SSH connection
