@@ -97,7 +97,7 @@ You can start using Docker commands immediately after server provisioning.
 
 ## Server Protection
 
-This configuration offers three levels of protection for your server:
+This configuration offers two levels of protection for your server:
 
 1. **Hetzner Cloud API Delete Protection** (`delete_protection = true`):
    - Prevents deletion via the Hetzner Cloud API
@@ -108,15 +108,7 @@ This configuration offers three levels of protection for your server:
    - Prevents rebuilding the server via the Hetzner Cloud API
    - Can be disabled through the Hetzner Cloud Console or API
 
-3. **Terraform Destroy Prevention** (`prevent_terraform_destroy = false`, disabled by default):
-   - When enabled, this prevents `terraform destroy` from deleting the resource
-   - Strongest protection level - requires manual editing of the .tf files to remove
-   - Disabled by default to prevent lockout scenarios
-
 You can configure these protection levels in the `terraform.tfvars` file.
-- Initial security hardening
-- Installation of essential packages
-- Configuration of unattended upgrades
 
 ## Next Steps
 

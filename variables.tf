@@ -10,12 +10,6 @@ variable "enable_rebuild_protection" {
   default     = true
 }
 
-variable "prevent_terraform_destroy" {
-  description = "Prevent Terraform from destroying this resource (stronger protection, requires manual editing of .tf files to remove)"
-  type        = bool
-  default     = false
-}
-
 variable "hcloud_token" {
   description = "Hetzner Cloud API Token"
   type        = string
