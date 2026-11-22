@@ -64,12 +64,6 @@ runcmd:
   - ufw allow 443/tcp comment 'HTTPS access'
   - ufw --force enable
 
-  # Install ctop (https://github.com/bcicen/ctop)
-  - |
-    ARCH=$(dpkg --print-architecture)
-    wget "https://github.com/bcicen/ctop/releases/download/v0.7.7/ctop-0.7.7-linux-$${ARCH}" -O /usr/local/bin/ctop
-    chmod +x /usr/local/bin/ctop
-
   # SSH hardening (config is in write_files below)
   - systemctl restart ssh
 
