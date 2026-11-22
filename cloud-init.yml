@@ -80,7 +80,7 @@ runcmd:
     ln -sf /usr/bin/fdfind /usr/local/bin/fd
 
   # Dotfiles live in dotfiles/ in this repo. install.sh links them and fetches their plugins.
-  # To update them later: git -C ~/.provisioner pull
+  # install.sh also adds a weekly user cron job that pulls this repo and updates the plugins.
   - su - ${username} -c 'git clone --depth=1 https://github.com/engineervix/provisioner.git ~/.provisioner && ~/.provisioner/dotfiles/install.sh'
 
 write_files:

@@ -123,13 +123,15 @@ The shell and editor config for the server user lives in [`dotfiles/`](dotfiles/
 > [!IMPORTANT]
 > cloud-init clones the `main` branch, so dotfile changes only reach new servers after they are merged.
 
-To update the dotfiles on an existing server:
+Servers keep themselves up to date. `install.sh` adds a weekly job to the user's crontab. The job pulls this repository, then runs `install.sh` again, which pulls the zsh plugins and runs `:PlugUpdate`. The last run's output is in `~/.cache/dotfiles-update.log`.
+
+To get a change sooner, run the same thing by hand:
 
 ```bash
-git -C ~/.provisioner pull
+git -C ~/.provisioner pull && ~/.provisioner/dotfiles/install.sh
 ```
 
-The files are symlinks, so a pull is enough. Run `~/.provisioner/dotfiles/install.sh` again only if the plugin list changed.
+The pull stops if you edited files in `~/.provisioner` on the server, and the log says which. Make dotfile changes in this repository instead.
 
 ## Next Steps
 
