@@ -80,11 +80,6 @@ runcmd:
   # Apply swap tuning now (systemd-sysctl only reads sysctl.d at boot)
   - sysctl -p /etc/sysctl.d/99-swap.conf
 
-  # Secure shared memory
-  - cp /etc/fstab /etc/fstab.bak2
-  - echo "none /run/shm tmpfs defaults,ro 0 0" | tee -a /etc/fstab
-  - mount -o remount /run/shm
-
   # Install Starship prompt
   - curl -sS https://starship.rs/install.sh | sh -s -- --yes
 
