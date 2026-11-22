@@ -46,7 +46,8 @@ zstyle ':completion:*' cache-path ~/.zsh/cache
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 autoload -Uz compinit
 # Full check only when the dump is older than 24h
-if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then compinit; else compinit -C; fi
+# compinit only rewrites the dump when something changed, so touch it to restart the 24h timer
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then compinit && touch ~/.zcompdump; else compinit -C; fi
 
 # =============== Aliases ===============
 alias ls='eza --icons'
