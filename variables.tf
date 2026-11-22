@@ -45,14 +45,8 @@ variable "user_name" {
   default     = "ubuntu"
 }
 
-variable "enable_ssh_ip_restrictions" {
-  description = "Whether to restrict SSH access to specific IP addresses"
-  type        = bool
-  default     = false
-}
-
 variable "allowed_ssh_ips" {
-  description = "List of IP addresses allowed to connect via SSH (only used if enable_ssh_ip_restrictions = true)"
+  description = "CIDRs allowed to connect via SSH (default: anywhere)"
   type        = list(string)
-  default     = ["0.0.0.0/0"]
+  default     = ["0.0.0.0/0", "::/0"]
 }

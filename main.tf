@@ -57,12 +57,12 @@ resource "hcloud_server" "ubuntu_server" {
 resource "hcloud_firewall" "web_firewall" {
   name = "web-firewall"
 
-  # SSH access - conditionally restrict by IP based on user preference
+  # SSH access
   rule {
     direction  = "in"
     protocol   = "tcp"
     port       = "22"
-    source_ips = var.enable_ssh_ip_restrictions ? var.allowed_ssh_ips : ["0.0.0.0/0", "::/0"]
+    source_ips = var.allowed_ssh_ips
   }
 
   # HTTP access
