@@ -36,9 +36,10 @@ resource "hcloud_server" "ubuntu_server" {
   # Enable Hetzner Cloud API rebuild protection
   rebuild_protection = var.enable_rebuild_protection
 
-  # Prevent accidental deletion through Terraform itself
+  # user_data only runs on first boot, and changing it forces a new server.
+  # Edits to cloud-init.yml apply to the next server you create, not this one.
   lifecycle {
-    prevent_destroy = false
+    ignore_changes = [user_data]
   }
 
   # Basic cloud-init configuration
