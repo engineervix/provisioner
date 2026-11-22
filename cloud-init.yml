@@ -27,6 +27,7 @@ packages:
   - btop
   - build-essential
   - ca-certificates
+  - cron
   - curl
   - duf
   - eza
@@ -69,9 +70,9 @@ runcmd:
   # Apply swap tuning now (systemd-sysctl only reads sysctl.d at boot)
   - sysctl -p /etc/sysctl.d/99-swap.conf
 
-  # Install Starship prompt (download first, so a failed fetch isn't piped into sh)
-  - curl -fsSL https://starship.rs/install.sh -o /tmp/starship-install.sh
-  - sh /tmp/starship-install.sh --yes
+  # Install starship and lazydocker. The same script then runs daily from cron
+  # to keep them up to date (see write_files). Its output: /var/log/update-tools.log
+  - /etc/cron.daily/update-tools
 
   # Create symlinks for Ubuntu-renamed CLI tools
   - |
@@ -97,6 +98,52 @@ write_files:
     content: |
       vm.swappiness=10
       vm.vfs_cache_pressure=50
+
+  # Installs or updates the tools apt doesn't provide. Runs daily as root.
+  # Each tool is reinstalled only when it's behind its latest GitHub release.
+  # To add a tool, copy one of the blocks. Output of the last run: /var/log/update-tools.log
+  - path: /etc/cron.daily/update-tools
+    permissions: "0755"
+    content: |
+      #!/bin/sh
+      set -eu
+      exec >/var/log/update-tools.log 2>&1
+      date
+
+      tmp=$(mktemp -d)
+      trap 'rm -rf "$tmp"' EXIT
+      cd "$tmp"
+
+      # Latest release of a GitHub repo: /releases/latest redirects to /releases/tag/vX.Y.Z
+      latest() {
+        v=$(curl -fsSLI -o /dev/null -w '%%{url_effective}' "https://github.com/$1/releases/latest") ||
+          { echo "cannot check releases for $1" >&2; return 1; }
+        v=$${v##*/v}
+        case $v in [0-9]*) echo "$v" ;; *) echo "unexpected latest version for $1: $v" >&2; return 1 ;; esac
+      }
+
+      # lazydocker: release tarball, checked against the release's checksums
+      v=$(latest jesseduffield/lazydocker)
+      if [ "$(lazydocker --version 2>/dev/null | sed -n 's/^Version: //p')" = "$v" ]; then
+        echo "lazydocker $v is up to date"
+      else
+        url=https://github.com/jesseduffield/lazydocker/releases/download/v$v
+        curl -fsSL --remote-name-all "$url/lazydocker_$${v}_Linux_x86_64.tar.gz" "$url/checksums.txt"
+        sha256sum -c --ignore-missing checksums.txt
+        tar xzf "lazydocker_$${v}_Linux_x86_64.tar.gz" lazydocker
+        install -m 755 lazydocker /usr/local/bin/
+        echo "lazydocker updated to $v"
+      fi
+
+      # starship: its own installer, which puts it in /usr/local/bin
+      v=$(latest starship/starship)
+      if [ "$(starship --version 2>/dev/null | sed -n '1s/^starship //p')" = "$v" ]; then
+        echo "starship $v is up to date"
+      else
+        curl -fsSL https://starship.rs/install.sh -o starship-install.sh
+        sh starship-install.sh --yes
+        echo "starship updated to $v"
+      fi
 
   # Configure unattended upgrades
   - path: /etc/apt/apt.conf.d/20auto-upgrades
