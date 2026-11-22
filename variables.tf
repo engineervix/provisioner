@@ -29,13 +29,14 @@ variable "server_name" {
 }
 
 variable "server_location" {
-  description = "Hetzner datacenter location"
+  description = "Hetzner location"
   type        = string
-  default     = "nbg1"  # Nuremberg, Germany
+  default     = "nbg1" # Nuremberg, Germany
 
+  # Keep in sync with server_type in main.tf: CX types are EU-only
   validation {
-    condition     = contains(["nbg1", "fsn1", "hel1", "ash", "hil"], var.server_location)
-    error_message = "Valid values are: nbg1 (Nuremberg), fsn1 (Falkenstein), hel1 (Helsinki), ash (Ashburn, VA, USA), or hil (Hillsboro, OR, USA)."
+    condition     = contains(["nbg1", "fsn1", "hel1"], var.server_location)
+    error_message = "cx23 is only available in nbg1 (Nuremberg), fsn1 (Falkenstein) or hel1 (Helsinki)."
   }
 }
 
