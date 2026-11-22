@@ -46,7 +46,6 @@ resource "hcloud_server" "ubuntu_server" {
   user_data = templatefile("${path.module}/cloud-init.yml", {
     username       = var.user_name
     ssh_public_key = hcloud_ssh_key.default.public_key
-    server_name    = var.server_name
   })
 
   # Enable backups

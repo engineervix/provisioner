@@ -1,5 +1,4 @@
 #cloud-config
-hostname: ${server_name}
 
 # Create users
 users:
@@ -518,6 +517,3 @@ write_files:
       APT::Periodic::Update-Package-Lists "1";
       APT::Periodic::Unattended-Upgrade "1";
       APT::Periodic::AutocleanInterval "7";
-
-# Final message on console
-final_message: "The system is finally up, after $UPTIME seconds"
