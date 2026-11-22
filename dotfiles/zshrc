@@ -136,6 +136,7 @@ extract() {
 }
 
 tar_max() {
+  setopt localoptions pipefail
   tar --exclude='.DS_Store' --exclude='node_modules' --exclude='__pycache__' -cv "$1" | xz -3e > "$2".tar.xz
 }
 
