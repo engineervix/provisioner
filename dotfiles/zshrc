@@ -177,12 +177,14 @@ export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --info=inline'
 # =============== Starship ===============
 eval "$(starship init zsh)"
 
-# =============== Syntax highlighting & autosuggestions ===============
-[ -f "$HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && source "$HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+# =============== Autosuggestions ===============
 [ -f "$HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" ] && source "$HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh"
+
+# =============== Zoxide ===============
+eval "$(zoxide init zsh)"
 
 # =============== Local / Secret Config ===============
 [ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
 
-# =============== Zoxide ===============
-eval "$(zoxide init zsh)"
+# =============== Syntax highlighting (must be last) ===============
+[ -f "$HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && source "$HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
