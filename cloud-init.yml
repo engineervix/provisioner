@@ -50,9 +50,10 @@ packages:
   - zoxide
   - zsh
 
-# Configure firewall (as backup to Hetzner firewall)
 runcmd:
-  # UFW setup
+  # UFW protects SSH and anything else running directly on the server, and still
+  # holds if the Hetzner firewall is ever detached. Docker-published ports bypass
+  # UFW, so only the Hetzner firewall (main.tf) covers containers.
   - ufw allow 22/tcp comment 'SSH access'
   - ufw allow 80/tcp comment 'HTTP access'
   - ufw allow 443/tcp comment 'HTTPS access'
