@@ -24,7 +24,6 @@ package_upgrade: true
 
 # Install essential packages
 packages:
-  - apt-transport-https
   - bat
   - btop
   - build-essential
@@ -37,19 +36,15 @@ packages:
   - fzf
   - git-delta
   - gnupg
-  - htop
   - jq
   - just
   - kitty-terminfo
-  - lsb-release
   - ncdu
-  - net-tools
   - plocate
   - python3-full
   - python3-pip
   - rclone
   - ripgrep
-  - software-properties-common
   - ufw
   - unattended-upgrades
   - vim-nox
