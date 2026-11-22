@@ -54,7 +54,7 @@ This repository contains Terraform configurations to automate the provisioning o
    - The Hetzner firewall (only 22, 80, 443 and ping are open). It filters traffic before it reaches the server, so it also covers ports published by Docker.
    - UFW on the server, with the same rules. It protects SSH and anything else running directly on the server if the Hetzner firewall is ever detached. Docker-published ports bypass UFW, so it does not protect containers.
 
-   To open another port, add a rule to `hcloud_firewall` in `main.tf`, and to UFW in `cloud-init.yml` if a process on the server (not a container) listens on it. `cloud-init.yml` only runs on first boot, so on an already-running server also run `sudo ufw allow <port>/tcp` yourself. For containers that only need local access (a database, an admin UI), publish them on localhost, for example `127.0.0.1:5432:5432`, or don't publish them at all and let the reverse proxy reach them over the Compose network.
+   To open another port, add a rule to `hcloud_firewall` in `main.tf`, and to UFW in `cloud-init.yml` if a process on the server (not a container) listens on it. `cloud-init.yml` only runs on first boot, so on an already-running server also run `sudo ufw allow <port>/<protocol>` yourself (for example `53/udp`). For containers that only need local access (a database, an admin UI), publish them on localhost, for example `127.0.0.1:5432:5432`, or don't publish them at all and let the reverse proxy reach them over the Compose network.
 
    After any firewall or Compose change, check what the internet can reach by scanning from outside, for example from your laptop: `nmap -Pn -p 22,80,443,5432 <server_ip>`.
 
