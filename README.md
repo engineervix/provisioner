@@ -10,6 +10,7 @@ This repository contains Terraform configurations to automate the provisioning o
 - [Setup](#setup)
 - [Docker CE Pre-installed](#docker-ce-pre-installed)
 - [Server Protection](#server-protection)
+- [Dotfiles](#dotfiles)
 - [Next Steps](#next-steps)
 - [Verifying Cloud-Init Installation](#verifying-cloud-init-installation)
 - [Destroying Resources](#destroying-resources)
@@ -38,7 +39,7 @@ This repository contains Terraform configurations to automate the provisioning o
    Copy the example file and edit it with your values:
 
    ```bash
-   cp terraform.tfvars.example terraform.tfvars
+   cp terraform-tfvars.example terraform.tfvars
    # Edit terraform.tfvars with your text editor
    ```
 
@@ -115,6 +116,21 @@ This configuration offers two levels of protection for your server:
 
 You can configure these protection levels in the `terraform.tfvars` file.
 
+## Dotfiles
+
+The shell and editor config for the server user lives in [`dotfiles/`](dotfiles/) (`zshrc`, `vimrc`, `starship.toml`). On first boot, cloud-init clones this repository into `~/.provisioner` and runs `dotfiles/install.sh`. That script links the files into place and fetches the zsh and vim plugins.
+
+> [!IMPORTANT]
+> cloud-init clones the `main` branch, so dotfile changes only reach new servers after they are merged.
+
+To update the dotfiles on an existing server:
+
+```bash
+git -C ~/.provisioner pull
+```
+
+The files are symlinks, so a pull is enough. Run `~/.provisioner/dotfiles/install.sh` again only if the plugin list changed.
+
 ## Next Steps
 
 After provisioning, you may want to:
@@ -152,7 +168,7 @@ To verify that everything was installed properly by cloud-init:
    sudo cloud-init query -a
    ```
 
-If you encounter issues with oh-my-zsh, vim, or any other configuration, these logs will help identify what went wrong.
+If you encounter issues with zsh, vim, or any other configuration, these logs will help identify what went wrong. cloud-init stops at the first failing command, and `cloud-init-output.log` shows each command as it runs.
 
 ## Destroying Resources
 
