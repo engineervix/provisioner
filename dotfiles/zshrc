@@ -39,9 +39,6 @@ history() {
 export PATH="$HOME/bin:$HOME/.local/bin:$PATH"
 export PATH="$PATH:/usr/sbin"
 
-# =============== Terminal ===============
-export TERM="xterm-256color"
-
 # =============== Editor ===============
 export VISUAL=vim
 export EDITOR="$VISUAL"
