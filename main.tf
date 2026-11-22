@@ -27,6 +27,9 @@ resource "hcloud_server" "ubuntu_server" {
   location    = var.server_location
   ssh_keys    = [hcloud_ssh_key.default.id]
 
+  # Attach at creation so the server is never exposed without it
+  firewall_ids = [hcloud_firewall.web_firewall.id]
+
   # Enable Hetzner Cloud API delete protection
   delete_protection = var.enable_delete_protection
 
@@ -97,12 +100,6 @@ resource "hcloud_firewall" "web_firewall" {
     protocol   = "icmp"
     source_ips = ["0.0.0.0/0", "::/0"]
   }
-}
-
-# Apply firewall to server
-resource "hcloud_firewall_attachment" "web_firewall" {
-  firewall_id = hcloud_firewall.web_firewall.id
-  server_ids  = [hcloud_server.ubuntu_server.id]
 }
 
 # Output server IP and other details
