@@ -1,0 +1,76 @@
+set nocompatible
+filetype off
+
+call plug#begin('~/.vim/plugged')
+
+Plug 'preservim/nerdtree'
+Plug 'junegunn/fzf'
+Plug 'junegunn/fzf.vim'
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+Plug 'tpope/vim-fugitive'
+Plug 'airblade/vim-gitgutter'
+Plug 'sheerun/vim-polyglot'
+Plug 'catppuccin/vim', { 'as': 'catppuccin' }
+Plug 'tpope/vim-surround'
+Plug 'tpope/vim-commentary'
+Plug 'jiangmiao/auto-pairs'
+call plug#end()
+
+filetype plugin indent on
+syntax enable
+
+if has('termguicolors')
+  set termguicolors
+endif
+
+try
+    set background=dark
+    colorscheme catppuccin_mocha
+    let g:airline_theme='catppuccin_mocha'
+catch /^Vim\%((\a\+)\)\=:E185/
+    colorscheme default
+    let g:airline_theme='dark'
+endtry
+
+set number
+set relativenumber
+set cursorline
+set showmatch
+set incsearch
+set hlsearch
+set ignorecase
+set smartcase
+set autoindent
+set smartindent
+set tabstop=4
+set softtabstop=4
+set shiftwidth=4
+set expandtab
+set scrolloff=8
+set sidescrolloff=8
+set wrap
+set linebreak
+set mouse=a
+set backspace=indent,eol,start
+set wildmenu
+set wildmode=longest:full,full
+set splitbelow
+set splitright
+set laststatus=2
+set encoding=utf-8
+set nobackup
+set nowritebackup
+set noswapfile
+
+let mapleader = " "
+
+nnoremap <leader>ff :Files<CR>
+nnoremap <leader>fg :Rg<CR>
+nnoremap <leader>fb :Buffers<CR>
+
+let g:NERDTreeShowHidden=1
+let g:airline_powerline_fonts = 1
+let g:airline#extensions#tabline#enabled = 1
+
+autocmd BufEnter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif

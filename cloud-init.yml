@@ -1,5 +1,4 @@
 #cloud-config
-hostname: ${server_name}
 
 # Create users
 users:
@@ -10,222 +9,145 @@ users:
     ssh_authorized_keys:
       - ${ssh_public_key}
 
+timezone: Africa/Lusaka
+
+# Swap file, with its fstab entry (skipped if the file already exists)
+swap:
+  filename: /swapfile
+  size: 4G
+  maxsize: 4G
+
 # Update package lists
 package_update: true
 package_upgrade: true
 
 # Install essential packages
 packages:
-  - apt-transport-https
+  - bat
+  - btop
   - build-essential
   - ca-certificates
+  - cron
   - curl
-  - fonts-powerline
+  - duf
+  - eza
+  - fail2ban
+  - fd-find
+  - fzf
+  - git-delta
   - gnupg
-  - htop
   - jq
   - just
-  - lsb-release
+  - kitty-terminfo
   - ncdu
-  - net-tools
   - plocate
   - python3-full
   - python3-pip
   - rclone
-  - software-properties-common
+  - ripgrep
   - ufw
   - unattended-upgrades
   - vim-nox
+  - zoxide
   - zsh
 
-# Configure firewall (as backup to Hetzner firewall)
 runcmd:
-  # UFW setup
+  # cloud-init joins these items into one /bin/sh script: stop at the first
+  # failure and log every command to /var/log/cloud-init-output.log
+  - set -eux
+
+  # UFW protects SSH and anything else running directly on the server, and still
+  # holds if the Hetzner firewall is ever detached. Docker-published ports bypass
+  # UFW, so only the Hetzner firewall (main.tf) covers containers.
   - ufw allow 22/tcp comment 'SSH access'
   - ufw allow 80/tcp comment 'HTTP access'
   - ufw allow 443/tcp comment 'HTTPS access'
   - ufw --force enable
 
-  # Install fail2ban for SSH protection (since we can't rely on IP restrictions)
-  - apt-get install -y fail2ban
-  - systemctl enable fail2ban
-  - systemctl start fail2ban
-
-  # Verify Docker is running properly
-  - systemctl status docker
-  - docker --version
-  - docker compose version
-
-  # Install ctop (https://github.com/bcicen/ctop)
-  - wget https://github.com/bcicen/ctop/releases/download/v0.7.7/ctop-0.7.7-linux-arm64 -O /usr/local/bin/ctop
-  - chmod +x /usr/local/bin/ctop
-
-  # SSH hardening
-  - cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
-  - sed -i 's/^#\?PermitRootLogin .*/PermitRootLogin no/' /etc/ssh/sshd_config
-  - sed -i 's/^#\?PasswordAuthentication .*/PasswordAuthentication no/' /etc/ssh/sshd_config
-  - sed -i 's/^#\?ChallengeResponseAuthentication .*/ChallengeResponseAuthentication no/' /etc/ssh/sshd_config
-  - sed -i 's/^#\?PubkeyAuthentication .*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
-  - echo "AllowUsers ${username}" >> /etc/ssh/sshd_config
+  # SSH hardening (config is in write_files below)
   - systemctl restart ssh
 
-  # Set timezone
-  - timedatectl set-timezone Africa/Lusaka
+  # Apply swap tuning now (systemd-sysctl only reads sysctl.d at boot)
+  - sysctl -p /etc/sysctl.d/99-swap.conf
 
-  # Create and configure swap file (if none exists)
+  # Install starship and lazydocker. The same script then runs daily from cron
+  # to keep them up to date (see write_files). Its output: /var/log/update-tools.log
+  - /etc/cron.daily/update-tools
+
+  # Create symlinks for Ubuntu-renamed CLI tools
   - |
-    if [ $(swapon --show | wc -l) -eq 0 ]; then
-      # Calculate swap size (2x RAM, max 4GB)
-      mem_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
-      mem_gb=$((mem_kb / 1024 / 1024))
-      swap_size=$((mem_gb * 2))
-      if [ $swap_size -gt 4 ]; then swap_size=4; fi
+    ln -sf /usr/bin/batcat /usr/local/bin/bat
+    ln -sf /usr/bin/fdfind /usr/local/bin/fd
 
-      # Create and configure swap
-      fallocate -l "$${swap_size}G" /swapfile
-      chmod 600 /swapfile
-      mkswap /swapfile
-      swapon /swapfile
-
-      # Add to fstab
-      cp /etc/fstab /etc/fstab.bak
-      echo '/swapfile none swap sw 0 0' | tee -a /etc/fstab
-
-      # Configure swap settings
-      sysctl vm.swappiness=10
-      sysctl vm.vfs_cache_pressure=50
-      echo "vm.swappiness=10" | tee -a /etc/sysctl.conf
-      echo "vm.vfs_cache_pressure=50" | tee -a /etc/sysctl.conf
-    fi
-
-  # Secure shared memory
-  - cp /etc/fstab /etc/fstab.bak2
-  - echo "none /run/shm tmpfs defaults,ro 0 0" | tee -a /etc/fstab
-  - mount -o remount /run/shm
-
-  # Install oh-my-zsh and configure it
-  - runuser -l ${username} -c 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended'
-
-  # Install Spaceship theme for oh-my-zsh
-  - |
-    # Clone the Spaceship prompt repository
-    git clone https://github.com/spaceship-prompt/spaceship-prompt.git "/home/${username}/.oh-my-zsh/custom/themes/spaceship-prompt" --depth=1
-
-    # Create a symlink to the theme file
-    ln -s "/home/${username}/.oh-my-zsh/custom/themes/spaceship-prompt/spaceship.zsh-theme" "/home/${username}/.oh-my-zsh/custom/themes/spaceship.zsh-theme"
-
-    # Set ownership
-    chown -R ${username}:${username} "/home/${username}/.oh-my-zsh/custom/themes/spaceship-prompt"
-    chown ${username}:${username} "/home/${username}/.oh-my-zsh/custom/themes/spaceship.zsh-theme"
-
-  # Install additional Powerline fonts
-  - |
-    cd /tmp
-    wget https://github.com/Lokaltog/powerline/raw/develop/font/PowerlineSymbols.otf
-    wget https://github.com/Lokaltog/powerline/raw/develop/font/10-powerline-symbols.conf
-    wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
-    wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
-    wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
-    wget https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
-
-    # Move fonts to the system font directory
-    mv -v PowerlineSymbols.otf /usr/share/fonts/
-    mv -v MesloLGS*.ttf /usr/share/fonts/
-
-    # Update font cache
-    fc-cache -vf
-
-    # Move config to proper location
-    mv 10-powerline-symbols.conf /etc/fonts/conf.d/
-
-  # Install ZSH plugins
-  - |
-    # Install zsh-autosuggestions
-    git clone https://github.com/zsh-users/zsh-autosuggestions /home/${username}/.oh-my-zsh/custom/plugins/zsh-autosuggestions
-
-    # Install zsh-syntax-highlighting
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git /home/${username}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
-
-    # Set permissions for the plugins
-    chown -R ${username}:${username} /home/${username}/.oh-my-zsh/custom/plugins/
-
-  # Configure .zshrc
-  - |
-    # Set theme and plugins in .zshrc
-    sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="spaceship"/' /home/${username}/.zshrc
-    sed -i 's/plugins=(git)/plugins=(git docker docker-compose colorize colored-man-pages sudo zsh-autosuggestions zsh-syntax-highlighting)/' /home/${username}/.zshrc
-
-    # Add some useful aliases and configurations
-    cat >> /home/${username}/.zshrc << 'EOL'
-
-    # Custom configurations
-    export TERM="xterm-256color"
-
-    # Set default editor
-    export EDITOR='vim'
-
-    # Useful aliases
-    alias la='ls -lah'
-
-    # Disable sharing history between terminals
-    unsetopt share_history
-    EOL
-
-    # Fix permissions
-    chown ${username}:${username} /home/${username}/.zshrc
-
-  # Install vim-airline
-  - |
-    # Create vim plugin directories
-    mkdir -p /home/${username}/.vim/autoload /home/${username}/.vim/bundle
-
-    # Install vim-plug (plugin manager)
-    curl -fLo /home/${username}/.vim/autoload/plug.vim --create-dirs \
-      https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
-
-    # Create .vimrc with vim-airline configuration
-    cat > /home/${username}/.vimrc << 'EOL'
-    call plug#begin('~/.vim/bundle')
-
-    " Install vim-airline and themes
-    Plug 'vim-airline/vim-airline'
-    Plug 'vim-airline/vim-airline-themes'
-
-    " Initialize plugin system
-    call plug#end()
-
-    " Airline configuration
-    let g:airline_powerline_fonts = 1
-    let g:airline_theme = 'minimalist'
-    let g:airline#extensions#tabline#enabled = 1
-
-    " General vim settings
-    syntax enable
-    set number
-    set background=dark
-    set encoding=utf-8
-
-    " Key mappings
-    nnoremap <C-J> <C-W><C-J>
-    nnoremap <C-K> <C-W><C-K>
-    nnoremap <C-L> <C-W><C-L>
-    nnoremap <C-H> <C-W><C-H>
-    EOL
-
-    # Set permissions
-    chown -R ${username}:${username} /home/${username}/.vim
-    chown ${username}:${username} /home/${username}/.vimrc
-
-    # Install plugins automatically
-    su - ${username} -c 'vim -E -s -u "/home/${username}/.vimrc" +PlugInstall +qall'
+  # Dotfiles live in dotfiles/ in this repo. install.sh links them and fetches their plugins.
+  # install.sh also adds a weekly user cron job that pulls this repo and updates the plugins.
+  - su - ${username} -c 'git clone --depth=1 https://github.com/engineervix/provisioner.git ~/.provisioner && ~/.provisioner/dotfiles/install.sh'
 
 write_files:
+  # SSH hardening. sshd keeps the first value it reads, and sshd_config includes
+  # sshd_config.d/*.conf at the top, so a 00- drop-in wins over everything else.
+  - path: /etc/ssh/sshd_config.d/00-hardening.conf
+    content: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      KbdInteractiveAuthentication no
+      PubkeyAuthentication yes
+      AllowUsers ${username}
+
+  - path: /etc/sysctl.d/99-swap.conf
+    content: |
+      vm.swappiness=10
+      vm.vfs_cache_pressure=50
+
+  # Installs or updates the tools apt doesn't provide. Runs daily as root.
+  # Each tool is reinstalled only when it's behind its latest GitHub release.
+  # To add a tool, copy one of the blocks. Output of the last run: /var/log/update-tools.log
+  - path: /etc/cron.daily/update-tools
+    permissions: "0755"
+    content: |
+      #!/bin/sh
+      set -eu
+      exec >/var/log/update-tools.log 2>&1
+      date
+
+      tmp=$(mktemp -d)
+      trap 'rm -rf "$tmp"' EXIT
+      cd "$tmp"
+
+      # Latest release of a GitHub repo: /releases/latest redirects to /releases/tag/vX.Y.Z
+      latest() {
+        v=$(curl -fsSLI -o /dev/null -w '%%{url_effective}' "https://github.com/$1/releases/latest") ||
+          { echo "cannot check releases for $1" >&2; return 1; }
+        v=$${v##*/v}
+        case $v in [0-9]*) echo "$v" ;; *) echo "unexpected latest version for $1: $v" >&2; return 1 ;; esac
+      }
+
+      # lazydocker: release tarball, checked against the release's checksums
+      v=$(latest jesseduffield/lazydocker)
+      if [ "$(lazydocker --version 2>/dev/null | sed -n 's/^Version: //p')" = "$v" ]; then
+        echo "lazydocker $v is up to date"
+      else
+        url=https://github.com/jesseduffield/lazydocker/releases/download/v$v
+        curl -fsSL --remote-name-all "$url/lazydocker_$${v}_Linux_x86_64.tar.gz" "$url/checksums.txt"
+        sha256sum -c --ignore-missing checksums.txt
+        tar xzf "lazydocker_$${v}_Linux_x86_64.tar.gz" lazydocker
+        install -m 755 lazydocker /usr/local/bin/
+        echo "lazydocker updated to $v"
+      fi
+
+      # starship: its own installer, which puts it in /usr/local/bin
+      v=$(latest starship/starship)
+      if [ "$(starship --version 2>/dev/null | sed -n '1s/^starship //p')" = "$v" ]; then
+        echo "starship $v is up to date"
+      else
+        curl -fsSL https://starship.rs/install.sh -o starship-install.sh
+        sh starship-install.sh --yes
+        echo "starship updated to $v"
+      fi
+
   # Configure unattended upgrades
   - path: /etc/apt/apt.conf.d/20auto-upgrades
     content: |
       APT::Periodic::Update-Package-Lists "1";
       APT::Periodic::Unattended-Upgrade "1";
       APT::Periodic::AutocleanInterval "7";
-
-# Final message on console
-final_message: "The system is finally up, after $UPTIME seconds"

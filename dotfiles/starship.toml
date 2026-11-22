@@ -1,0 +1,51 @@
+# Refined "True Stock" Starship Configuration
+# (Matches default behavior exactly, but with Catppuccin colors and Nerd Font icons)
+
+"$schema" = 'https://starship.rs/config-schema.json'
+
+palette = 'catppuccin_mocha'
+format = "$all"
+add_newline = true
+
+[directory]
+style = "bold blue"
+format = "[$path]($style) "
+truncation_length = 3
+truncation_symbol = "…/"
+
+[git_branch]
+symbol = " "
+style = "bold mauve"
+format = "on [$symbol$branch]($style) "
+
+[git_status]
+style = "bold red"
+format = '([\[$all_status$ahead_behind\]]($style) )'
+
+[python]
+symbol = " "
+style = "bold yellow"
+format = 'via [$symbol($version )(\($virtualenv\) )]($style)'
+
+[docker_context]
+symbol = " "
+style = "bold blue"
+format = "via [$symbol$context]($style) "
+
+[cmd_duration]
+min_time = 500
+show_milliseconds = false
+style = "bold yellow"
+format = "took [$duration]($style) "
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[✖](bold red)"
+vimcmd_symbol = "[❮](bold green)"
+
+[palettes.catppuccin_mocha]
+mauve = "#cba6f7"
+red = "#f38ba8"
+yellow = "#f9e2af"
+green = "#a6e3a1"
+blue = "#89b4fa"

@@ -10,6 +10,7 @@ This repository contains Terraform configurations to automate the provisioning o
 - [Setup](#setup)
 - [Docker CE Pre-installed](#docker-ce-pre-installed)
 - [Server Protection](#server-protection)
+- [Dotfiles](#dotfiles)
 - [Next Steps](#next-steps)
 - [Verifying Cloud-Init Installation](#verifying-cloud-init-installation)
 - [Destroying Resources](#destroying-resources)
@@ -38,7 +39,7 @@ This repository contains Terraform configurations to automate the provisioning o
    Copy the example file and edit it with your values:
 
    ```bash
-   cp terraform.tfvars.example terraform.tfvars
+   cp terraform-tfvars.example terraform.tfvars
    # Edit terraform.tfvars with your text editor
    ```
 
@@ -50,30 +51,20 @@ This repository contains Terraform configurations to automate the provisioning o
    **Security Note**: By default, SSH access is not restricted by IP address since the assumption is that most users have dynamic IPs. The configuration relies on:
    - SSH key-based authentication (no password access)
    - Fail2ban for protection against brute force attempts
-   - UFW firewall as a backup security measure
+   - The Hetzner firewall (only 22, 80, 443 and ping are open). It filters traffic before it reaches the server, so it also covers ports published by Docker.
+   - UFW on the server, with the same rules. It protects SSH and anything else running directly on the server if the Hetzner firewall is ever detached. Docker-published ports bypass UFW, so it does not protect containers.
 
-3. **Set up SSH Agent**
+   To open another port, add a rule to `hcloud_firewall` in `main.tf`, and to UFW in `cloud-init.yml` if a process on the server (not a container) listens on it. `cloud-init.yml` only runs on first boot, so on an already-running server also run `sudo ufw allow <port>/<protocol>` yourself (for example `53/udp`). For containers that only need local access (a database, an admin UI), publish them on localhost, for example `127.0.0.1:5432:5432`, or don't publish them at all and let the reverse proxy reach them over the Compose network.
 
-   This configuration uses SSH agent for authentication during provisioning, which allows the use of password-protected SSH keys:
+   After any firewall or Compose change, check what the internet can reach by scanning from outside, for example from your laptop: `nmap -Pn -p 22,80,443,5432 <server_ip>`.
 
-   ```bash
-   # Start the SSH agent if not running
-   eval "$(ssh-agent -s)"
-   
-   # Add your private key to the agent (you'll be prompted for the password once)
-   ssh-add ~/.ssh/id_rsa
-   
-   # Verify your key was added
-   ssh-add -l
-   ```
-
-4. **Initialize Terraform**
+3. **Initialize Terraform**
 
    ```bash
    terraform init
    ```
 
-5. **Review the execution plan**
+4. **Review the execution plan**
 
    ```bash
    terraform plan
@@ -81,7 +72,7 @@ This repository contains Terraform configurations to automate the provisioning o
 
    This will show you what resources will be created without making any changes.
 
-6. **Apply the configuration**
+5. **Apply the configuration**
 
    ```bash
    terraform apply
@@ -89,11 +80,12 @@ This repository contains Terraform configurations to automate the provisioning o
 
    Type 'yes' when prompted to create the resources.
 
-7. **Connect to your new server**
+6. **Connect to your new server**
 
-   After the provisioning is complete, Terraform will output the IP address of your new server:
+   Terraform outputs the IP address of your new server. Terraform returns as soon as the server exists, but cloud-init keeps working for a few minutes, so wait for it to finish:
 
    ```bash
+   ssh -i ~/.ssh/id_rsa username@<server_ip> cloud-init status --wait
    ssh -i ~/.ssh/id_rsa username@<server_ip>
    ```
 
@@ -111,7 +103,7 @@ You can start using Docker commands immediately after server provisioning.
 
 ## Server Protection
 
-This configuration offers three levels of protection for your server:
+This configuration offers two levels of protection for your server:
 
 1. **Hetzner Cloud API Delete Protection** (`delete_protection = true`):
    - Prevents deletion via the Hetzner Cloud API
@@ -122,15 +114,24 @@ This configuration offers three levels of protection for your server:
    - Prevents rebuilding the server via the Hetzner Cloud API
    - Can be disabled through the Hetzner Cloud Console or API
 
-3. **Terraform Destroy Prevention** (`prevent_terraform_destroy = false`, disabled by default):
-   - When enabled, this prevents `terraform destroy` from deleting the resource
-   - Strongest protection level - requires manual editing of the .tf files to remove
-   - Disabled by default to prevent lockout scenarios
-
 You can configure these protection levels in the `terraform.tfvars` file.
-- Initial security hardening
-- Installation of essential packages
-- Configuration of unattended upgrades
+
+## Dotfiles
+
+The shell and editor config for the server user lives in [`dotfiles/`](dotfiles/) (`zshrc`, `vimrc`, `starship.toml`). On first boot, cloud-init clones this repository into `~/.provisioner` and runs `dotfiles/install.sh`. That script links the files into place and fetches the zsh and vim plugins.
+
+> [!IMPORTANT]
+> cloud-init clones the `main` branch, so dotfile changes only reach new servers after they are merged.
+
+Servers keep themselves up to date. `install.sh` adds a weekly job to the user's crontab. The job pulls this repository, then runs `install.sh` again, which pulls the zsh plugins and runs `:PlugUpdate`. The last run's output is in `~/.cache/dotfiles-update.log`.
+
+To get a change sooner, run the same thing by hand:
+
+```bash
+git -C ~/.provisioner pull && ~/.provisioner/dotfiles/install.sh
+```
+
+The pull stops if you edited files in `~/.provisioner` on the server, and the log says which. Make dotfile changes in this repository instead.
 
 ## Next Steps
 
@@ -169,7 +170,7 @@ To verify that everything was installed properly by cloud-init:
    sudo cloud-init query -a
    ```
 
-If you encounter issues with oh-my-zsh, vim, or any other configuration, these logs will help identify what went wrong.
+If you encounter issues with zsh, vim, or any other configuration, these logs will help identify what went wrong. cloud-init stops at the first failing command, and `cloud-init-output.log` shows each command as it runs.
 
 ## Destroying Resources
 
@@ -186,9 +187,8 @@ Type 'yes' when prompted to destroy the resources.
 
 ## Important Notes
 
-- The server will be accessible via SSH immediately after provisioning
+- SSH works once cloud-init has finished (see step 6 of [Setup](#setup)), not right after `terraform apply`
 - The root password authentication is disabled by default
 - Only the non-root user specified in the variables can log in via SSH with the specified key
 - Make sure to keep your terraform.tfvars file secure as it contains sensitive information
 - The user is automatically added to the `docker` group and can run docker commands without sudo
-- This configuration uses SSH agent for provisioning, allowing the use of password-protected SSH keys

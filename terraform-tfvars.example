@@ -15,9 +15,6 @@ enable_rebuild_protection = true   # Prevent rebuilding via Hetzner Cloud API
 # User configuration
 user_name = "ubuntu"
 
-# Security configuration - By default, not restricting SSH by IP since most users have dynamic IPs
-enable_ssh_ip_restrictions = false
-
-# If you ever get a static IP or want to temporarily restrict access:
-# enable_ssh_ip_restrictions = true
+# SSH is open to any IP by default, since most users have dynamic IPs.
+# If you get a static IP or want to restrict access for a while:
 # allowed_ssh_ips = ["your-static-ip/32"]

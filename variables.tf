@@ -10,12 +10,6 @@ variable "enable_rebuild_protection" {
   default     = true
 }
 
-variable "prevent_terraform_destroy" {
-  description = "Prevent Terraform from destroying this resource (stronger protection, requires manual editing of .tf files to remove)"
-  type        = bool
-  default     = false
-}
-
 variable "hcloud_token" {
   description = "Hetzner Cloud API Token"
   type        = string
@@ -35,13 +29,14 @@ variable "server_name" {
 }
 
 variable "server_location" {
-  description = "Hetzner datacenter location"
+  description = "Hetzner location"
   type        = string
-  default     = "nbg1"  # Nuremberg, Germany
+  default     = "nbg1" # Nuremberg, Germany
 
+  # Keep in sync with server_type in main.tf: CX types are EU-only
   validation {
-    condition     = contains(["nbg1", "fsn1", "hel1", "ash", "hil"], var.server_location)
-    error_message = "Valid values are: nbg1 (Nuremberg), fsn1 (Falkenstein), hel1 (Helsinki), ash (Ashburn, VA, USA), or hil (Hillsboro, OR, USA)."
+    condition     = contains(["nbg1", "fsn1", "hel1"], var.server_location)
+    error_message = "cx23 is only available in nbg1 (Nuremberg), fsn1 (Falkenstein) or hel1 (Helsinki)."
   }
 }
 
@@ -51,14 +46,8 @@ variable "user_name" {
   default     = "ubuntu"
 }
 
-variable "enable_ssh_ip_restrictions" {
-  description = "Whether to restrict SSH access to specific IP addresses"
-  type        = bool
-  default     = false
-}
-
 variable "allowed_ssh_ips" {
-  description = "List of IP addresses allowed to connect via SSH (only used if enable_ssh_ip_restrictions = true)"
+  description = "CIDRs allowed to connect via SSH (default: anywhere)"
   type        = list(string)
-  default     = ["0.0.0.0/0"]
+  default     = ["0.0.0.0/0", "::/0"]
 }
