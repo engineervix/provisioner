@@ -51,6 +51,10 @@ packages:
   - zsh
 
 runcmd:
+  # cloud-init joins these items into one /bin/sh script: stop at the first
+  # failure and log every command to /var/log/cloud-init-output.log
+  - set -eux
+
   # UFW protects SSH and anything else running directly on the server, and still
   # holds if the Hetzner firewall is ever detached. Docker-published ports bypass
   # UFW, so only the Hetzner firewall (main.tf) covers containers.
