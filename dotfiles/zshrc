@@ -20,10 +20,7 @@ HISTFILE=~/.zsh_history
 HISTSIZE=100000
 SAVEHIST=100000
 setopt extended_history
-setopt appendhistory
-setopt incappendhistory
 setopt histignorealldups
-setopt histignoredups
 setopt histignorespace
 setopt histreduceblanks
 
@@ -37,7 +34,6 @@ history() {
 
 # =============== Paths ===============
 export PATH="$HOME/bin:$HOME/.local/bin:$PATH"
-export PATH="$PATH:/usr/sbin"
 
 # =============== Editor ===============
 export VISUAL=vim
