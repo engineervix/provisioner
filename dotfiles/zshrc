@@ -156,7 +156,10 @@ rgf() {
           --preview-window 'right:60%:+{2}-3'
 }
 
+# delta only on a terminal, so redirected output stays a plain diff. pipefail keeps diff's exit code.
 diff() {
+  [[ -t 1 ]] || { command diff "$@"; return; }
+  setopt localoptions pipefail
   command diff --color=always "$@" | delta
 }
 
