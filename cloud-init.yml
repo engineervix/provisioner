@@ -64,8 +64,9 @@ runcmd:
   # Apply swap tuning now (systemd-sysctl only reads sysctl.d at boot)
   - sysctl -p /etc/sysctl.d/99-swap.conf
 
-  # Install Starship prompt
-  - curl -sS https://starship.rs/install.sh | sh -s -- --yes
+  # Install Starship prompt (download first, so a failed fetch isn't piped into sh)
+  - curl -fsSL https://starship.rs/install.sh -o /tmp/starship-install.sh
+  - sh /tmp/starship-install.sh --yes
 
   # Install ZSH plugins and create support directories
   - |
