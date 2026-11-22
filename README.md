@@ -52,28 +52,13 @@ This repository contains Terraform configurations to automate the provisioning o
    - Fail2ban for protection against brute force attempts
    - UFW firewall as a backup security measure
 
-3. **Set up SSH Agent**
-
-   This configuration uses SSH agent for authentication during provisioning, which allows the use of password-protected SSH keys:
-
-   ```bash
-   # Start the SSH agent if not running
-   eval "$(ssh-agent -s)"
-   
-   # Add your private key to the agent (you'll be prompted for the password once)
-   ssh-add ~/.ssh/id_rsa
-   
-   # Verify your key was added
-   ssh-add -l
-   ```
-
-4. **Initialize Terraform**
+3. **Initialize Terraform**
 
    ```bash
    terraform init
    ```
 
-5. **Review the execution plan**
+4. **Review the execution plan**
 
    ```bash
    terraform plan
@@ -81,7 +66,7 @@ This repository contains Terraform configurations to automate the provisioning o
 
    This will show you what resources will be created without making any changes.
 
-6. **Apply the configuration**
+5. **Apply the configuration**
 
    ```bash
    terraform apply
@@ -89,11 +74,12 @@ This repository contains Terraform configurations to automate the provisioning o
 
    Type 'yes' when prompted to create the resources.
 
-7. **Connect to your new server**
+6. **Connect to your new server**
 
-   After the provisioning is complete, Terraform will output the IP address of your new server:
+   Terraform outputs the IP address of your new server. Terraform returns as soon as the server exists, but cloud-init keeps working for a few minutes, so wait for it to finish:
 
    ```bash
+   ssh -i ~/.ssh/id_rsa username@<server_ip> cloud-init status --wait
    ssh -i ~/.ssh/id_rsa username@<server_ip>
    ```
 
@@ -191,4 +177,3 @@ Type 'yes' when prompted to destroy the resources.
 - Only the non-root user specified in the variables can log in via SSH with the specified key
 - Make sure to keep your terraform.tfvars file secure as it contains sensitive information
 - The user is automatically added to the `docker` group and can run docker commands without sudo
-- This configuration uses SSH agent for provisioning, allowing the use of password-protected SSH keys

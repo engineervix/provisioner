@@ -50,20 +50,6 @@ resource "hcloud_server" "ubuntu_server" {
 
   # Enable backups
   backups = true
-
-  # Wait for the server to be available via SSH
-  connection {
-    type    = "ssh"
-    user    = "root"
-    host    = self.ipv4_address
-    agent   = true
-    timeout = "2m"
-  }
-
-  # Basic provisioner to test SSH connection
-  provisioner "remote-exec" {
-    inline = ["echo 'SSH connection established!'"]
-  }
 }
 
 # Create a basic firewall
