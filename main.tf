@@ -45,7 +45,7 @@ resource "hcloud_server" "ubuntu_server" {
   # Basic cloud-init configuration
   user_data = templatefile("${path.module}/cloud-init.yml", {
     username       = var.user_name
-    ssh_public_key = file(var.ssh_public_key_path)
+    ssh_public_key = hcloud_ssh_key.default.public_key
     server_name    = var.server_name
   })
 
@@ -89,11 +89,6 @@ resource "hcloud_firewall" "web_firewall" {
   }
 }
 
-# Output server IP and other details
 output "server_ip" {
   value = hcloud_server.ubuntu_server.ipv4_address
-}
-
-output "server_status" {
-  value = hcloud_server.ubuntu_server.status
 }
