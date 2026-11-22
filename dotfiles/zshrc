@@ -1,0 +1,209 @@
+# =============== Keybindings ===============
+bindkey -e
+bindkey '^[[1;5C' vi-forward-word
+bindkey '^[[1;5D' vi-backward-word
+bindkey '^[[H' beginning-of-line
+bindkey '^[[F' end-of-line
+
+# =============== Options ===============
+setopt autocd
+setopt extendedglob
+setopt interactivecomments
+setopt magicequalsubst
+setopt notify
+setopt numericglobsort
+setopt promptsubst
+setopt sharehistory
+
+# =============== History ===============
+HISTFILE=~/.zsh_history
+HISTSIZE=100000
+SAVEHIST=100000
+setopt extended_history
+setopt appendhistory
+setopt incappendhistory
+setopt histignorealldups
+setopt histignoredups
+setopt histignorespace
+setopt histreduceblanks
+
+history() {
+  if [[ $# -eq 0 ]]; then
+    builtin history -i 1
+  else
+    builtin history "$@"
+  fi
+}
+
+# =============== Paths ===============
+export PATH="$HOME/bin:$HOME/.local/bin:$PATH"
+export PATH="$PATH:/usr/sbin"
+
+# =============== Terminal ===============
+export TERM="xterm-256color"
+
+# =============== Editor ===============
+export VISUAL=vim
+export EDITOR="$VISUAL"
+
+# =============== Completions ===============
+fpath=(~/.zfunc $fpath)
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path ~/.zsh/cache
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+autoload -Uz compinit
+for dump in ~/.zcompdump(N.mh+24); do
+  compinit
+done
+compinit -C
+
+# =============== Aliases ===============
+alias ls='eza --icons'
+alias ll='eza -la --icons --git'
+alias la='eza -lah --icons --git'
+alias cat='bat'
+alias find='fd'
+alias grep='rg'
+alias du='duf'
+alias top='btop'
+alias cd='z'
+alias ts='date +"%Y-%m-%d-%H-%M-%S"'
+alias pipup='pip install --upgrade pip'
+
+# Safety aliases
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+# Git helper functions
+function git_current_branch() {
+  git symbolic-ref --short -q HEAD
+}
+
+function git_main_branch() {
+  command git rev-parse --git-dir &>/dev/null || return
+  local ref
+  for ref in refs/{heads,remotes/{origin,upstream}}/{main,trunk,mainline,default,stable,master}; do
+    if command git show-ref -q --verify $ref; then
+      echo ${ref:t}
+      return 0
+    fi
+  done
+  echo master
+}
+
+# Git aliases
+alias g='git'
+alias gst='git status'
+alias gss='git status --short'
+alias ga='git add'
+alias gaa='git add --all'
+alias gc='git commit --verbose'
+alias gcmsg='git commit --message'
+alias gca='git commit --verbose --all'
+alias gc!='git commit --verbose --amend'
+alias gb='git branch'
+alias gba='git branch --all'
+alias gco='git checkout'
+alias gcb='git checkout -b'
+alias gcm='git checkout $(git_main_branch)'
+alias gd='git diff'
+alias gds='git diff --staged'
+alias gl='git pull'
+alias gp='git push'
+alias glog='git log --oneline --decorate --graph'
+alias glol='git log --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset"'
+
+function ggp() {
+  if [[ "$#" != 0 ]] && [[ "$#" != 1 ]]; then
+    git push origin "${*}"
+  else
+    [[ "$#" == 0 ]] && local b="$(git_current_branch)"
+    git push origin "${b:=$1}"
+  fi
+}
+compdef _git ggp=git-checkout
+
+# Docker aliases
+alias dco="docker compose"
+alias dps='docker ps'
+alias dpsa='docker ps -a'
+alias dcu='docker compose up'
+alias dcud='docker compose up -d'
+alias dcd='docker compose down'
+
+# =============== Custom Functions ===============
+mkcd() { mkdir -p "$1" && cd "$1"; }
+
+extract() {
+  if [ -f "$1" ]; then
+    case "$1" in
+      *.tar.bz2)   tar xjf "$1"     ;;
+      *.tar.gz)    tar xzf "$1"     ;;
+      *.bz2)       bunzip2 "$1"     ;;
+      *.rar)       unrar e "$1"     ;;
+      *.gz)        gunzip "$1"      ;;
+      *.tar)       tar xf "$1"      ;;
+      *.tbz2)      tar xjf "$1"     ;;
+      *.tgz)       tar xzf "$1"     ;;
+      *.zip)       unzip "$1"       ;;
+      *.Z)         uncompress "$1"  ;;
+      *.7z)        7z x "$1"        ;;
+      *)           echo "'$1' cannot be extracted via extract()" ;;
+    esac
+  else
+    echo "'$1' is not a valid file"
+  fi
+}
+
+tar_max() {
+  tar --exclude='.DS_Store' --exclude='node_modules' --exclude='__pycache__' -cv "$1" | xz -3e > "$2".tar.xz
+}
+
+grep_this() {
+  command grep --color -inrw . -e "$1"
+  echo "Matches: $(command grep -inrw . -e "$1" | wc -l)"
+}
+
+mkdir_date() {
+  mkdir -p $(date '+%Y-%h-%d-%a')
+}
+
+kill_spaces() {
+  command find . -name "*.$1" -type f -print0 | while IFS= read -r -d $'\0' f; do mv -v "$f" "${f// /_}"; done
+}
+
+rgf() {
+  rg --color=always --line-number "$@" \
+    | fzf --ansi --delimiter=: \
+          --preview 'bat --color=always {1} --highlight-line {2}' \
+          --preview-window 'right:60%:+{2}-3'
+}
+
+diff() {
+  command diff --color=always "$@" | delta
+}
+
+# =============== FZF ===============
+if [ -f ~/.fzf.zsh ]; then
+  source ~/.fzf.zsh
+elif [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]; then
+  source /usr/share/doc/fzf/examples/key-bindings.zsh
+fi
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border --info=inline'
+
+# =============== Starship ===============
+eval "$(starship init zsh)"
+
+# =============== Syntax highlighting & autosuggestions ===============
+[ -f "$HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && source "$HOME/.zsh/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+[ -f "$HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh" ] && source "$HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh"
+
+# =============== Local / Secret Config ===============
+[ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"
+
+# =============== Zoxide ===============
+eval "$(zoxide init zsh)"
