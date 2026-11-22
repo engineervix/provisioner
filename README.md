@@ -185,7 +185,7 @@ Type 'yes' when prompted to destroy the resources.
 
 ## Important Notes
 
-- The server will be accessible via SSH immediately after provisioning
+- SSH works once cloud-init has finished (see step 6 of [Setup](#setup)), not right after `terraform apply`
 - The root password authentication is disabled by default
 - Only the non-root user specified in the variables can log in via SSH with the specified key
 - Make sure to keep your terraform.tfvars file secure as it contains sensitive information
